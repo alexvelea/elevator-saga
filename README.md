@@ -13,3 +13,7 @@ Implement support for 2 elevators which unaware of each other.
 
 Implement support for 4 elevators which unaware of each other.
 Nitpick with how many people an elevator can hold.
+
+### Level 6..10 strategy
+
+Same as lvl 5, but with native support for undefined number of elevators.

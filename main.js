@@ -17,10 +17,13 @@ const obj =
     // begin cut below
     {
         state: {
-            direction: [+1, +1, +1, +1],
+            direction: [],
             maxLoadFactor: 0.5,
         },
         init: function (elevators, floors) {
+            elevators.forEach(() => {
+                this.state.direction.push(+1)
+            })
         },
         update: function (dt, elevators, floors) {
             elevators.forEach((elevator, index) => {
