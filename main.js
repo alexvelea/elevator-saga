@@ -7,6 +7,10 @@ emptyApi = {
     },
     loadFactor: function () {
     },
+    goingUpIndicator: function () {
+    },
+    goingDownIndicator: function () {
+    },
     buttonStates: {
         up: "",
         down: "",
@@ -19,13 +23,27 @@ const obj =
         state: {
             direction: [],
             maxLoadFactor: 0.5,
+            ongoingHere: [],
         },
         init: function (elevators, floors) {
-            elevators.forEach(() => {
+            elevators.forEach((elevator) => {
                 this.state.direction.push(+1)
+                elevator.goingUpIndicator(true)
+                elevator.goingDownIndicator(false)
+            })
+            floors.forEach(() => {
+                this.state.ongoingHere.push({
+                    up: false,
+                    down: false,
+                })
             })
         },
         update: function (dt, elevators, floors) {
+            this.state.ongoingHere.forEach((here) => {
+                here.up = false
+                here.down = false
+            })
+
             elevators.forEach((elevator, index) => {
                     const pressed = elevator.getPressedFloors()
                     const currentFloor = elevator.currentFloor()
@@ -35,6 +53,8 @@ const obj =
                     const swapDirection = () => {
                         direction = -direction
                         this.state.direction[index] = direction
+                        elevator.goingDownIndicator(1 ^ elevator.goingDownIndicator())
+                        elevator.goingUpIndicator(1 ^ elevator.goingUpIndicator())
                     };
 
                     let numTries = 0;
@@ -53,7 +73,7 @@ const obj =
 
                             if (elevator.loadFactor() < this.state.maxLoadFactor) {
                                 floors.forEach((floor, level) => {
-                                    if (level >= currentFloor && floor.buttonStates.up !== "") {
+                                    if (this.state.ongoingHere[level].up === false && level >= currentFloor && floor.buttonStates.up !== "") {
                                         nextLevel = Math.min(nextLevel, level)
                                     }
                                 })
@@ -63,7 +83,7 @@ const obj =
                             if (nextLevel === floors.length) {
                                 nextLevel = -1
                                 floors.forEach((floor, level) => {
-                                    if (level >= currentFloor && floor.buttonStates.down !== "") {
+                                    if (this.state.ongoingHere[level].down === false && level > currentFloor && floor.buttonStates.down !== "") {
                                         nextLevel = Math.max(nextLevel, level)
                                     }
                                 })
@@ -86,7 +106,7 @@ const obj =
                             })
                             if (elevator.loadFactor() < this.state.maxLoadFactor) {
                                 floors.forEach((floor, level) => {
-                                    if (level <= currentFloor && floor.buttonStates.down !== "") {
+                                    if (this.state.ongoingHere[level].down === false && level <= currentFloor && floor.buttonStates.down !== "") {
                                         nextLevel = Math.max(nextLevel, level)
                                     }
                                 })
@@ -96,7 +116,7 @@ const obj =
                             if (nextLevel === floors.length) {
                                 nextLevel = floors.length
                                 floors.forEach((floor, level) => {
-                                    if (level <= currentFloor && floor.buttonStates.up !== "") {
+                                    if (this.state.ongoingHere[level].up === false && level < currentFloor && floor.buttonStates.up !== "") {
                                         nextLevel = Math.min(nextLevel, level)
                                     }
                                 })
@@ -115,6 +135,11 @@ const obj =
                     }
 
                     elevator.goToFloor(toFloor, true)
+                    if (direction === +1) {
+                        this.state.ongoingHere[toFloor].up = true
+                    } else {
+                        this.state.ongoingHere[toFloor].down = true
+                    }
                 }
             )
         }

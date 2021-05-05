@@ -17,3 +17,7 @@ Nitpick with how many people an elevator can hold.
 ### Level 6..10 strategy
 
 Same as lvl 5, but with native support for undefined number of elevators.
+
+### Level 11
+
+Use indicator API & don't move 2 elevators to pick up people from one floor
