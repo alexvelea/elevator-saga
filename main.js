@@ -17,88 +17,105 @@ const obj =
     // begin cut below
     {
         state: {
-            direction: +1
+            direction: [+1, +1]
         },
         init: function (elevators, floors) {
         },
         update: function (dt, elevators, floors) {
-            const elevator = elevators[0]
-            const pressed = elevator.getPressedFloors()
-            const currentFloor = elevator.currentFloor()
-            let toFloor = 0
+            elevators.forEach((elevator, index) => {
+                    const pressed = elevator.getPressedFloors()
+                    const currentFloor = elevator.currentFloor()
+                    let direction = this.state.direction[index]
+                    let toFloor
 
-            // check if we should go down
-            if (this.state.direction === +1) {
-                let maxLevel = -1
-                pressed.forEach((level) => {
-                    maxLevel = Math.max(maxLevel, level)
-                })
+                    const swapDirection = () => {
+                        direction = -direction
+                        this.state.direction[index] = direction
+                    };
 
-                floors.forEach((floor, level) => {
-                    if (floor.buttonStates.up !== "" || floor.buttonStates.down !== "") {
-                        maxLevel = Math.max(maxLevel, level)
+                    let numTries = 0;
+                    for (; ;) {
+                        numTries += 1;
+                        if (numTries === 3) {
+                            toFloor = currentFloor
+                            break
+                        }
+                        if (direction === +1) {
+                            let nextLevel = floors.length
+                            pressed.forEach((level) => {
+                                if (level >= currentFloor)
+                                    nextLevel = Math.min(nextLevel, level)
+                            })
+
+                            if (elevator.loadFactor() < 0.75) {
+                                floors.forEach((floor, level) => {
+                                    if (level >= currentFloor && floor.buttonStates.up !== "") {
+                                        nextLevel = Math.min(nextLevel, level)
+                                    }
+                                })
+                            }
+
+                            // try to go up to pick up people going down
+                            if (nextLevel === floors.length) {
+                                nextLevel = -1
+                                floors.forEach((floor, level) => {
+                                    if (level >= currentFloor && floor.buttonStates.down !== "") {
+                                        nextLevel = Math.max(nextLevel, level)
+                                    }
+                                })
+                                if (nextLevel === -1) {
+                                    nextLevel = floors.length
+                                }
+                            }
+
+                            if (nextLevel === floors.length) {
+                                swapDirection()
+                            } else {
+                                toFloor = nextLevel
+                                break
+                            }
+                        } else {
+                            let nextLevel = -1
+                            pressed.forEach((level) => {
+                                if (level <= currentFloor)
+                                    nextLevel = Math.max(nextLevel, level)
+                            })
+                            if (elevator.loadFactor() < 0.75) {
+                                floors.forEach((floor, level) => {
+                                    if (level <= currentFloor && floor.buttonStates.down !== "") {
+                                        nextLevel = Math.max(nextLevel, level)
+                                    }
+                                })
+                            }
+
+                            // try to go up to pick up people going up
+                            if (nextLevel === floors.length) {
+                                nextLevel = floors.length
+                                floors.forEach((floor, level) => {
+                                    if (level <= currentFloor && floor.buttonStates.up !== "") {
+                                        nextLevel = Math.min(nextLevel, level)
+                                    }
+                                })
+                                if (nextLevel === floors.length) {
+                                    nextLevel = -1
+                                }
+                            }
+
+                            if (nextLevel === -1) {
+                                swapDirection()
+                            } else {
+                                toFloor = nextLevel
+                                break
+                            }
+                        }
                     }
-                })
 
-                // finished everything on max-level, go down
-                if (currentFloor > maxLevel) {
-                    this.state.direction = -1
+                    elevator.goToFloor(toFloor, true)
                 }
-            } else {
-                let minLevel = floors.length
-                pressed.forEach((level) => {
-                    minLevel = Math.min(minLevel, level)
-                })
-
-                floors.forEach((floor, level) => {
-                    if (floor.buttonStates.up !== "" || floor.buttonStates.down !== "") {
-                        minLevel = Math.min(minLevel, level)
-                    }
-                })
-
-                // finished everything on min-level, go up
-                if (currentFloor < minLevel) {
-                    this.state.direction = +1
-                }
-
-                if (elevator.loadFactor() === 1) {
-                    this.state.direction = +1
-                }
-            }
-
-            // next floor at which we should stop at
-            if (this.state.direction === +1) {
-                let nextLevel = floors.length - 1
-                pressed.forEach((level) => {
-                    if (level >= currentFloor)
-                        nextLevel = Math.min(nextLevel, level)
-                })
-                floors.forEach((floor, level) => {
-                    if (level >= currentFloor && floor.buttonStates.up !== "") {
-                        nextLevel = Math.min(nextLevel, level)
-                    }
-                })
-
-                toFloor = nextLevel
-            } else {
-                let nextLevel = 0
-                pressed.forEach((level) => {
-                    if (level <= currentFloor)
-                        nextLevel = Math.max(nextLevel, level)
-                })
-                floors.forEach((floor, level) => {
-                    if (level <= currentFloor && floor.buttonStates.down !== "") {
-                        nextLevel = Math.max(nextLevel, level)
-                    }
-                })
-
-                toFloor = nextLevel
-            }
-
-            elevator.goToFloor(toFloor, true)
-            console.log(this.state.direction, toFloor)
+            )
         }
-    } // end cut
+    }
+// end cut
 
 obj.init()
 obj.update(0.3, [emptyApi], [emptyApi])
