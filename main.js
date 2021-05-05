@@ -17,7 +17,8 @@ const obj =
     // begin cut below
     {
         state: {
-            direction: [+1, +1]
+            direction: [+1, +1, +1, +1],
+            maxLoadFactor: 0.5,
         },
         init: function (elevators, floors) {
         },
@@ -47,7 +48,7 @@ const obj =
                                     nextLevel = Math.min(nextLevel, level)
                             })
 
-                            if (elevator.loadFactor() < 0.75) {
+                            if (elevator.loadFactor() < this.state.maxLoadFactor) {
                                 floors.forEach((floor, level) => {
                                     if (level >= currentFloor && floor.buttonStates.up !== "") {
                                         nextLevel = Math.min(nextLevel, level)
@@ -80,7 +81,7 @@ const obj =
                                 if (level <= currentFloor)
                                     nextLevel = Math.max(nextLevel, level)
                             })
-                            if (elevator.loadFactor() < 0.75) {
+                            if (elevator.loadFactor() < this.state.maxLoadFactor) {
                                 floors.forEach((floor, level) => {
                                     if (level <= currentFloor && floor.buttonStates.down !== "") {
                                         nextLevel = Math.max(nextLevel, level)

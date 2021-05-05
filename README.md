@@ -8,3 +8,8 @@ Only stop at required floors, dont go `0..4..0` everytime. When going up, only g
 ### Level 4 strategy
 
 Implement support for 2 elevators which unaware of each other.
+
+### Level 5 strategy
+
+Implement support for 4 elevators which unaware of each other.
+Nitpick with how many people an elevator can hold.
