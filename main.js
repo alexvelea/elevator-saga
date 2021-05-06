@@ -45,103 +45,110 @@ const obj =
             })
 
             elevators.forEach((elevator, index) => {
-                    const pressed = elevator.getPressedFloors()
-                    const currentFloor = elevator.currentFloor()
-                    let direction = this.state.direction[index]
-                    let toFloor
+                const pressed = elevator.getPressedFloors()
+                const currentFloor = elevator.currentFloor()
+                let direction = this.state.direction[index]
+                let toFloor
 
-                    const swapDirection = () => {
-                        direction = -direction
-                        this.state.direction[index] = direction
-                        elevator.goingDownIndicator(1 ^ elevator.goingDownIndicator())
-                        elevator.goingUpIndicator(1 ^ elevator.goingUpIndicator())
-                    };
+                const swapDirection = () => {
+                    direction = -direction
+                    this.state.direction[index] = direction
+                    elevator.goingDownIndicator(1 ^ elevator.goingDownIndicator())
+                    elevator.goingUpIndicator(1 ^ elevator.goingUpIndicator())
+                };
 
-                    let numTries = 0;
-                    for (; ;) {
-                        numTries += 1;
-                        if (numTries === 3) {
-                            toFloor = currentFloor
+                let numTries = 0;
+                let wantsToPickUp;
+                for (; ;) {
+                    wantsToPickUp = false;
+                    numTries += 1;
+                    if (numTries === 3) {
+                        if (direction === +1) {
+                            swapDirection()
+                        }
+                        toFloor = 0
+                        break
+                    }
+                    if (direction === +1) {
+                        let nextLevel = floors.length
+                        pressed.forEach((level) => {
+                            if (level >= currentFloor)
+                                nextLevel = Math.min(nextLevel, level)
+                        })
+
+                        if (elevator.loadFactor() < this.state.maxLoadFactor) {
+                            floors.forEach((floor, level) => {
+                                if (this.state.ongoingHere[level].up === false && level >= currentFloor && floor.buttonStates.up !== "") {
+                                    nextLevel = Math.min(nextLevel, level)
+                                }
+                            })
+                        }
+
+                        // try to go up to pick up people going down
+                        if (nextLevel === floors.length) {
+                            nextLevel = -1
+                            floors.forEach((floor, level) => {
+                                if (this.state.ongoingHere[level].down === false && level > currentFloor && floor.buttonStates.down !== "") {
+                                    nextLevel = Math.max(nextLevel, level)
+                                }
+                            })
+                            if (nextLevel === -1) {
+                                nextLevel = floors.length
+                            }
+                            wantsToPickUp = true
+                        }
+
+                        if (nextLevel === floors.length) {
+                            swapDirection()
+                        } else {
+                            toFloor = nextLevel
                             break
                         }
-                        if (direction === +1) {
-                            let nextLevel = floors.length
-                            pressed.forEach((level) => {
-                                if (level >= currentFloor)
-                                    nextLevel = Math.min(nextLevel, level)
+                    } else {
+                        let nextLevel = -1
+                        pressed.forEach((level) => {
+                            if (level <= currentFloor)
+                                nextLevel = Math.max(nextLevel, level)
+                        })
+                        if (elevator.loadFactor() < this.state.maxLoadFactor) {
+                            floors.forEach((floor, level) => {
+                                if (this.state.ongoingHere[level].down === false && level <= currentFloor && floor.buttonStates.down !== "") {
+                                    nextLevel = Math.max(nextLevel, level)
+                                }
                             })
+                        }
 
-                            if (elevator.loadFactor() < this.state.maxLoadFactor) {
-                                floors.forEach((floor, level) => {
-                                    if (this.state.ongoingHere[level].up === false && level >= currentFloor && floor.buttonStates.up !== "") {
-                                        nextLevel = Math.min(nextLevel, level)
-                                    }
-                                })
-                            }
-
-                            // try to go up to pick up people going down
+                        // try to go up to pick up people going up
+                        if (nextLevel === floors.length) {
+                            nextLevel = floors.length
+                            floors.forEach((floor, level) => {
+                                if (this.state.ongoingHere[level].up === false && level < currentFloor && floor.buttonStates.up !== "") {
+                                    nextLevel = Math.min(nextLevel, level)
+                                }
+                            })
                             if (nextLevel === floors.length) {
                                 nextLevel = -1
-                                floors.forEach((floor, level) => {
-                                    if (this.state.ongoingHere[level].down === false && level > currentFloor && floor.buttonStates.down !== "") {
-                                        nextLevel = Math.max(nextLevel, level)
-                                    }
-                                })
-                                if (nextLevel === -1) {
-                                    nextLevel = floors.length
-                                }
                             }
+                            wantsToPickUp = true
+                        }
 
-                            if (nextLevel === floors.length) {
-                                swapDirection()
-                            } else {
-                                toFloor = nextLevel
-                                break
-                            }
+                        if (nextLevel === -1) {
+                            swapDirection()
                         } else {
-                            let nextLevel = -1
-                            pressed.forEach((level) => {
-                                if (level <= currentFloor)
-                                    nextLevel = Math.max(nextLevel, level)
-                            })
-                            if (elevator.loadFactor() < this.state.maxLoadFactor) {
-                                floors.forEach((floor, level) => {
-                                    if (this.state.ongoingHere[level].down === false && level <= currentFloor && floor.buttonStates.down !== "") {
-                                        nextLevel = Math.max(nextLevel, level)
-                                    }
-                                })
-                            }
-
-                            // try to go up to pick up people going up
-                            if (nextLevel === floors.length) {
-                                nextLevel = floors.length
-                                floors.forEach((floor, level) => {
-                                    if (this.state.ongoingHere[level].up === false && level < currentFloor && floor.buttonStates.up !== "") {
-                                        nextLevel = Math.min(nextLevel, level)
-                                    }
-                                })
-                                if (nextLevel === floors.length) {
-                                    nextLevel = -1
-                                }
-                            }
-
-                            if (nextLevel === -1) {
-                                swapDirection()
-                            } else {
-                                toFloor = nextLevel
-                                break
-                            }
+                            toFloor = nextLevel
+                            break
                         }
                     }
-
-                    elevator.goToFloor(toFloor, true)
-                    if (direction === +1) {
-                        this.state.ongoingHere[toFloor].up = true
-                    } else {
-                        this.state.ongoingHere[toFloor].down = true
-                    }
                 }
-            )
+
+                elevator.goToFloor(toFloor, true)
+                if ((direction === +1) === (wantsToPickUp === false)) {
+                    this.state.ongoingHere[toFloor].up = true
+                } else {
+                    this.state.ongoingHere[toFloor].down = true
+                }
+            })
+            console.log(this.state.ongoingHere);
         }
     }
 // end cut

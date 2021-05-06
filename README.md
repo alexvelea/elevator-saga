@@ -21,3 +21,7 @@ Same as lvl 5, but with native support for undefined number of elevators.
 ### Level 11
 
 Use indicator API & don't move 2 elevators to pick up people from one floor
+
+### Level 12
+
+Make elevators wait at lvl 0 to reduce max-wait time in case of no available tasks
